@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>CRUD</title>
+	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+</head>
+<body>
+	<ul>
+		<li><a href="#" id="show-all">All</a></li>
+		<li><a href="#" id="show-last-week">Last week</a></li>
+		<li><a href="#" id="show-top-buyer">Top buyer (half-year)</a></li>
+		<li><a href="#" id="show-top-product">Top product (week)</a></li>
+		<li><a href="#" id="show-top-product-by-age">Top product (18 years old buyers)</a></li>
+		<li><a href="#" id="new-item">New item...</a></li>
+	</ul>
+	<table id="data-table">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>First name</th>
+				<th>Last name</th>
+				<th>Age</th>
+				<th>Item</th>
+				<th>Count</th>
+				<th>Amount</th>
+				<th>Date</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+	</table>
+	<div class="modal" tabindex="-1" role="dialog" id="edit-modal">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Edit purchase</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label for="id">ID</label>
+						<input type="text" class="form-control" id="id" readonly>
+					</div>
+					<div class="row">
+						<div class="col">
+							<div class="form-group">
+								<label for="first-name">First name</label>
+								<input type="text" class="form-control" id="first-name">
+							</div>
+						</div>
+						<div class="col">
+							<div class="form-group">
+								<label for="last-name">Last name</label>
+								<input type="text" class="form-control" id="last-name">
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="age">Age</label>
+						<input type="number" class="form-control" id="age">
+					</div>
+					<div class="form-group">
+						<label for="item">Item</label>
+						<select class="form-control" id="item">
+						</select>
+					</div>
+					<div class="row">
+						<div class="col">
+							<div class="form-group">
+								<label for="count">Count</label>
+								<input type="number" class="form-control" id="count">
+							</div>
+						</div>
+						<div class="col">
+							<div class="form-group">
+								<label for="amount">Amount</label>
+								<input type="number" step="any" class="form-control" id="amount">
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="date">Date</label>
+						<input type="date" class="form-control" id="date">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary" id="save-button">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+	<script>
+		$(document).ready(function () {
+			var table = $("#data-table").DataTable({
+				"ajax": "/purchaseItems",
+				"columns": [
+					{ "data": "id" },
+					{ "data": "firstName" },
+					{ "data": "lastName" },
+					{ "data": "age" },
+					{ "data": "shopItem" },
+					{ "data": "count" },
+					{ "data": "amount" },
+					{ "data": "date" },
+					{ "data": null }
+				],
+				"columnDefs": [
+					{
+						"targets": 4,
+						"render": function (data, type, row) {
+							return data.name;
+						}
+					},
+					{
+						"targets": 8,
+						"render": function (data, type, row) {
+							return "<button class='btn btn-primary edit-button'>Edit</button>&nbsp;" +
+								"<button class='btn btn-danger delete-button'>Delete</button>";
+						}
+					}
+				]
+			});
+			$.get("/shopItems", function (data) {
+				var select = $("#item");
+				select.empty();
+				for (var i = 0; i < data.length; i++) {
+					var option = $("<option>");
+					option.attr("value", data[i].id);
+					option.text(data[i].name);
+					select.append(option);
+				}
+			});
+			$("#save-button").click(function () {
+				var id = $("#id").val();
+				id = id ? parseInt(id) : null;
+				$.ajax({
+					method: 'post',
+					url: "/purchaseItems",
+					contentType: 'application/json',
+					data: JSON.stringify({
+						id: id,
+						firstName: $("#first-name").val(),
+						lastName: $("#last-name").val(),
+						age: parseInt($("#age").val()),
+						shopItem: {
+							id: parseInt($("#item").val()),
+							text: $("#item option:selected").text()
+						},
+						count: parseInt($("#count").val()),
+						amount: parseFloat($("#amount").val()),
+						date: new Date($("#date").val()).toISOString().split('T')[0]
+					}),
+					success: function () {
+						$("#edit-modal").modal('hide');
+						table.ajax.reload();
+					}
+				});
+			});
+			$("#new-item").click(function (evt) {
+				evt.preventDefault();
+				$("#id").val("");
+				$("#first-name").val("");
+				$("#last-name").val("");
+				$("#age").val("");
+				$("#item").val($("#item option:first").val());
+				$("#count").val(1);
+				$("#amount").val(1);
+				$("#date").val(new Date().toISOString().split('T')[0]);
+				$('#edit-modal').modal();
+			});
+			table.on('click', '.edit-button', function () {
+				var data = table.row($(this).closest('tr')).data();
+				$("#id").val(data.id);
+				$("#first-name").val(data.firstName);
+				$("#last-name").val(data.lastName);
+				$("#age").val(data.age);
+				$("#item").val(data.shopItem.id);
+				$("#count").val(data.count);
+				$("#amount").val(data.amount);
+				$("#date").val(data.date);
+				$('#edit-modal').modal();
+			});
+			table.on('click', '.delete-button', function () {
+				var data = table.row($(this).closest('tr')).data();
+				Swal.fire({
+					title: 'Are you sure?',
+					text: 'You are going to delete this purchase',
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonColor: '#3085d6',
+					cancelButtonColor: '#d33',
+					confirmButtonText: 'Yes, delete it!'
+				}).then(function (result) {
+					if (result.value) {
+						$.ajax({
+							method: 'delete',
+							url: '/purchaseItems/' + data.id,
+							success: function () {
+								table.ajax.reload();
+							}
+						});
+					}
+				});
+			});
+			$("#show-all").click(function (evt) {
+				evt.preventDefault();
+				table.ajax.url('/purchaseItems').load();
+			});
+			$("#show-last-week").click(function (evt) {
+				evt.preventDefault();
+				table.ajax.url('/purchaseItems/lastWeek').load();
+			});
+			$("#show-top-buyer").click(function (evt) {
+				evt.preventDefault();
+				$.get('/purchaseItems/topBuyer', function (data) {
+					Swal.fire({
+						title: "Top buyer",
+						text: data.firstName + " " + data.lastName,
+						icon: 'info'
+					});
+				});
+			});
+			$("#show-top-product").click(function (evt) {
+				evt.preventDefault();
+				$.get('/purchaseItems/topProduct', function (data) {
+					Swal.fire({
+						title: "Top product",
+						text: data.name,
+						icon: 'info'
+					});
+				});
+			});
+			$("#show-top-product-by-age").click(function (evt) {
+				evt.preventDefault();
+				$.get('/purchaseItems/topProductByAge?age=18', function (data) {
+					Swal.fire({
+						title: "Top product by age",
+						text: data.name,
+						icon: 'info'
+					});
+				});
+			});
+		});
+	</script>
+</body>
+</html>
