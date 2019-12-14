@@ -1,0 +1,53 @@
+openapi: "3.0.0"
+info:
+  title: Simple API for submitting information about purchases
+  version: "1.0"
+paths:
+  /purchaseItems/post:
+    post:
+      operationId: PostPurchaseItem
+      summary: Submit information about purchase
+      requestBody:
+        required: true
+        content: 
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/purchase-item'
+            examples:
+              xml:
+                value: "<purchase-item>\n
+                \t<first-name>Mikhail</first-name>\n
+                \t<last-name>ILMENSKII</last-name>\n
+                \t<age>24</age>\n
+                \t<item>1</item>\n
+                \t<count>1</count>\n
+                \t<amount>20000</amount>\n
+                \t<date>2019-12-13</date>\n
+                </purchase-item>"
+      responses:
+        200:
+          description: Sucessfully stored in the database
+        400:
+          description: Request body doesn't match XSD
+        404:
+          description: No ShopItem with supplied ID found
+components:
+  schemas:
+    purchase-item:
+      type: object
+      properties:
+        first-name:
+          type: string
+        last-name:
+          type: string
+        age:
+          type: integer
+        item:
+          type: integer
+        count:
+          type: integer
+        amount:
+          type: number
+        date:
+          type: string
+ 

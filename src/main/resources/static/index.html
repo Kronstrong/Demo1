@@ -7,16 +7,17 @@
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
 </head>
 <body>
-	<ul>
-		<li><a href="#" id="show-all">All</a></li>
-		<li><a href="#" id="show-last-week">Last week</a></li>
-		<li><a href="#" id="show-top-buyer">Top buyer (half-year)</a></li>
-		<li><a href="#" id="show-top-product">Top product (week)</a></li>
-		<li><a href="#" id="show-top-product-by-age">Top product (18 years old buyers)</a></li>
-		<li><a href="#" id="new-item">New item...</a></li>
-	</ul>
-	<table id="data-table">
-		<thead>
+	<div class="container">
+		<ul>
+			<li><a href="#" id="show-all">All</a></li>
+			<li><a href="#" id="show-last-week">Last week</a></li>
+			<li><a href="#" id="show-top-buyer">Top buyer (half-year)</a></li>
+			<li><a href="#" id="show-top-product">Top product (week)</a></li>
+			<li><a href="#" id="show-top-product-by-age">Top product (18 years old buyers)</a></li>
+			<li><a href="#" id="new-item">New item...</a></li>
+		</ul>
+		<table id="data-table">
+			<thead>
 			<tr>
 				<th>ID</th>
 				<th>First name</th>
@@ -28,8 +29,19 @@
 				<th>Date</th>
 				<th>Actions</th>
 			</tr>
-		</thead>
-	</table>
+			</thead>
+		</table>
+		<textarea id="xml-request" class="form-control"><purchase-item>
+	<first-name>Mikhail</first-name>
+	<last-name>ILMENSKII</last-name>
+	<age>24</age>
+	<item>1</item>
+	<count>1</count>
+	<amount>20000</amount>
+	<date>2019-12-13</date>
+</purchase-item></textarea>
+		<button class="btn btn-primary" id="submit-xml-request">Submit</button>
+	</div>
 	<div class="modal" tabindex="-1" role="dialog" id="edit-modal">
 		<div class="modal-dialog" role="document">
 			<div class="modal-content">
@@ -247,6 +259,30 @@
 						text: data.name,
 						icon: 'info'
 					});
+				});
+			});
+			$("#submit-xml-request").click(function () {
+				$.ajax({
+					url: "/purchaseItems/post",
+					data: $("#xml-request").val(),
+					type: "post",
+					contentType: "text/xml",
+					dataType: "text",
+					success: function () {
+						table.ajax.reload();
+						Swal.fire({
+							title: "Completed",
+							text: "Request was successful",
+							icon: "success"
+						});
+					},
+					error: function (xhr) {
+						Swal.fire({
+							title: "Error",
+							text: xhr.responseText,
+							icon: "error"
+						});
+					}
 				});
 			});
 		});
